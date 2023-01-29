@@ -6,7 +6,7 @@ from torchvision import models
 from byol import BYOL
 import torch.nn as nn
 import yaml
-
+import random
 
 import math
 
@@ -46,16 +46,22 @@ def initLearner():
 
     return learner
 
-def train_test_split(dataset, test_size: float = 0.1,):
+
+
+def train_test_split(dataset, test_size = 0.1, seed = 0):
     if test_size < 0 or test_size > 1:
         raise ValueError("Test size must be in [0, 1].")
 
     test_size = int(test_size * len(dataset))
     train_size = len(dataset) - test_size
 
-    generator = torch.Generator()
+
+
+    generator = torch.Generator().manual_seed(seed)
 
     return torch.utils.data.random_split(dataset, [train_size, test_size], generator=generator)
+
+
 
 def run(parameters):
 
@@ -88,6 +94,10 @@ def run(parameters):
         non_flare_only= False,
     )
 
+    seed = random.randint(-0x8000_0000_0000_0000, 0xffff_ffff_ffff_ffff)
+
+
+
     dataset_tr, dataset_val = train_test_split(dataset)
 
     dataloader_tr = torch.utils.data.DataLoader(dataset_tr, batch_size=200, shuffle=True)
@@ -99,7 +109,7 @@ def run(parameters):
     alpha = args.alpha
 
     f = open(Path(args.out_file), 'a')
-    f.write('training on {}, lr: {}, weights_saved: {} , alpha: {}\n'.format(parameters["data"]["channel"], lr, args.save_weights, args.alpha))
+    f.write('training on {}, lr: {}, weights_saved: {} , alpha: {}\n, val_seed: {}'.format(parameters["data"]["channel"], lr, args.save_weights, args.alpha, seed))
     f.close()
 
     # create directory to save weights
@@ -146,7 +156,7 @@ def run(parameters):
                 loss, loss_cl = learner( img,img1, img2,  label)
 
 
-                loss_all = loss + alpha * loss_cl
+                loss_all = alpha * loss_cl
                 loss_vall += loss_all.detach()
                 count_vall+=1
             f = open(Path(args.out_file), 'a')
@@ -162,5 +172,20 @@ if __name__ == '__main__':
         parameters = yaml.load(file, Loader=yaml.FullLoader)
 
     run(parameters)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

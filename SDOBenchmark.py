@@ -139,11 +139,11 @@ class SDOBenchmarkDataset_time_steps(BaseDataset):
 
         p = random.random()
 
-        #if p <= 0.2:
-            #kernel_size =(3, 3)
-            #sigma= random.uniform(1.0, 2.0)
-            #x_t = [F.gaussian_blur(x[i], kernel_size, [sigma, sigma]) for i in range (4)]
-            #x= x_t
+        if p <= 0.2:
+            kernel_size =(3, 3)
+            sigma= random.uniform(1.0, 2.0)
+            x_t = [F.gaussian_blur(x[i], kernel_size, [sigma, sigma]) for i in range (4)]
+            x= x_t
         #random resized crop
         size = 256
         i, j, h, w = transforms.RandomResizedCrop.get_params(x[0], (0.8, 1), (1, 1))
@@ -167,20 +167,11 @@ class SDOBenchmarkDataset_time_steps(BaseDataset):
         metadata = self.ls[index]
         target = metadata[1]
         images = [Image.open(self.root_folder / path) for path in metadata[0]]
-
+        to_tensor = transforms.ToTensor()
+        images = [to_tensor(image) for image in images]
         if self.is_train:
             image1 = self.transform_byol(images)
             image2 = self.transform_byol(images)
-
-        to_tensor = transforms.ToTensor()
-        images1 = [to_tensor(image) for image in images]
-        images = images1
-
-        image11 = [to_tensor(image) for image in image1]
-        image1 = image11
-
-        image22 = [to_tensor(image) for image in image2]
-        image2 = image22
 
         if self.transform:
             images = [self.transform(image) for image in images]

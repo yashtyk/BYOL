@@ -192,12 +192,10 @@ class BYOL(nn.Module):
         augment_fn2 = None,
         moving_average_decay = 0.99,
         use_momentum = True,
-        num_channel = 4,
-        test = False,
+        num_channel = 4
     ):
         super().__init__()
         self.net = net
-        self.test = test
 
         self.classifier = Classifier()
         self.loss = nn.CrossEntropyLoss()
@@ -243,7 +241,7 @@ class BYOL(nn.Module):
     @singleton('target_encoder')
     def _get_target_encoder(self):
         target_encoder = copy.deepcopy(self.online_encoder)
-        #set_requires_grad(target_encoder, False)
+        set_requires_grad(target_encoder, False)
         return target_encoder
 
     def reset_moving_average(self):
@@ -270,10 +268,10 @@ class BYOL(nn.Module):
             return self.online_encoder(x, return_projection = return_projection)
         # classification loss calculation
         classification_loss = np.array([0, 0])
-        out = 1
         if y is not None:
             transformed = x
             target_encoder = self._get_target_encoder() if self.use_momentum else self.online_encoder
+            set_requires_grad(target_encoder, True)
             representation = target_encoder(transformed, return_projection=False)
             out = self.classifier(representation)
             out = F.softmax(out, dim=1)
@@ -303,8 +301,4 @@ class BYOL(nn.Module):
 
         loss = loss_one + loss_two
 
-
-        if not self.test:
-            return loss.mean(), classification_loss
-        else:
-            return loss.mean(), classification_loss, y, out
+        return loss.mean(), classification_loss
